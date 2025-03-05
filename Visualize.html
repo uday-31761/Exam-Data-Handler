@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Visualize Data</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <h1>Visualize Data</h1>
+  <select id="columnSelect"></select>
+  <button onclick="generateCharts()">Generate Charts</button>
+  <button onclick="downloadFilteredCSV()">Download Filtered Data</button>
+
+  <div>
+    <canvas id="lineChart"></canvas>
+    <canvas id="pieChart"></canvas>
+  </div>
+
+  <script>
+    let filteredData = JSON.parse(localStorage.getItem('filteredData')) || [];
+    let numericColumns = [];
+
+    window.onload = () => {
+      if (!filteredData.length) {
+        alert('No filtered data found. Please apply filters first.');
+        window.location.href = 'filters.html';
+      }
+      const headers = Object.keys(filteredData[0]);
+      numericColumns = headers.filter(h => filteredData.every(row => typeof row[h] === 'number'));
+      const columnSelect = document.getElementById('columnSelect');
+      numericColumns.forEach(col => {
+        columnSelect.innerHTML += `<option value="${col}">${col}</option>`;
+      });
+    };
+
+    function generateCharts() {
+      const selectedColumn = document.getElementById('columnSelect').value;
+      const labels = filteredData.map(row => row.Year);
+      const values = filteredData.map(row => row[selectedColumn]);
+
+      if (window.lineChartInstance) window.lineChartInstance.destroy();
+      if (window.pieChartInstance) window.pieChartInstance.destroy();
+
+      const lineCtx = document.getElementById('lineChart').getContext('2d');
+      window.lineChartInstance = new Chart(lineCtx, {
+        type: 'line',
+        data: { labels, datasets: [{ label: selectedColumn, data: values, borderColor: 'blue', fill: false }] }
+      });
+
+      const pieCtx = document.getElementById('pieChart').getContext('2d');
+      window.pieChartInstance = new Chart(pieCtx, {
+        type: 'pie',
+        data: { labels, datasets: [{ data: values, backgroundColor: values.map(() => `hsl(${Math.random() * 360}, 70%, 70%)`) }] }
+      });
+    }
+
+    function downloadFilteredCSV() {
+      const csvRows = [Object.keys(filteredData[0]).join(',')];
+      filteredData.forEach(row => {
+        csvRows.push(Object.values(row).join(','));
+      });
+      const csvData = new Blob([csvRows.join('\n')], { type: 'text/csv' });
+      const url = URL.createObjectURL(csvData);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'filtered_data.csv';
+      link.click();
+    }
+  </script>
+</body>
+</html>
