@@ -8,35 +8,69 @@
     body {
       font-family: Arial, sans-serif;
       margin: 20px;
+      background-color: #f5f5f5;
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+    .controls {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    select, input {
+      padding: 8px;
+      font-size: 14px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    button {
+      padding: 8px 12px;
+      font-size: 14px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #0056b3;
     }
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 20px;
-    }
-    table, th, td {
-      border: 1px solid black;
+      background-color: white;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     }
     th, td {
-      padding: 10px;
+      padding: 12px;
+      border: 1px solid #ddd;
       text-align: left;
     }
-    .controls {
-      margin-bottom: 20px;
+    th {
+      background-color: #007bff;
+      color: white;
     }
-    .controls select, .controls input, .controls button {
-      margin-right: 10px;
+    tr:nth-child(even) {
+      background-color: #f9f9f9;
     }
   </style>
 </head>
 <body>
+
   <h1>Filter Data</h1>
+
   <div class="controls">
     <select id="filterColumn"></select>
-    <input type="text" id="filterValue" placeholder="Enter filter value" />
+    <input type="text" id="filterValue" placeholder="Enter filter value">
     <button id="applyFilter">Apply Filter</button>
     <button id="backButton">Back to Main Page</button>
   </div>
+
   <table id="filteredTable">
     <thead>
       <tr id="filteredHeader"></tr>
@@ -45,8 +79,8 @@
   </table>
 
   <script>
-    // Retrieve the table data from localStorage
-    const tableData = JSON.parse(localStorage.getItem("tableData"));
+    const tableData = JSON.parse(localStorage.getItem("tableData")) || [];
+
     const filterColumn = document.getElementById("filterColumn");
     const filterValue = document.getElementById("filterValue");
     const applyFilter = document.getElementById("applyFilter");
@@ -54,66 +88,60 @@
     const filteredHeader = document.getElementById("filteredHeader");
     const filteredBody = document.getElementById("filteredBody");
 
-    // Populate the filter dropdown with column names
-    tableData[0].forEach((header) => {
-      const option = document.createElement("option");
-      option.value = header;
-      option.textContent = header;
-      filterColumn.appendChild(option);
-    });
-
-    // Display the filtered data in the table
-    function displayFilteredTable(data) {
-      filteredHeader.innerHTML = "";
-      filteredBody.innerHTML = "";
-
-      // Populate table headers
-      data[0].forEach((header) => {
-        const th = document.createElement("th");
-        th.textContent = header;
-        filteredHeader.appendChild(th);
+    if (tableData.length === 0) {
+      alert("No data found to display!");
+    } else {
+      tableData[0].forEach(header => {
+        const option = document.createElement("option");
+        option.value = header;
+        option.textContent = header;
+        filterColumn.appendChild(option);
       });
 
-      // Populate table rows
-      data.slice(1).forEach((row) => {
-        const tr = document.createElement("tr");
-        row.forEach((cell) => {
-          const td = document.createElement("td");
-          td.textContent = cell;
-          tr.appendChild(td);
+      function displayFilteredTable(data) {
+        filteredHeader.innerHTML = "";
+        filteredBody.innerHTML = "";
+
+        data[0].forEach(header => {
+          const th = document.createElement("th");
+          th.textContent = header;
+          filteredHeader.appendChild(th);
         });
-        filteredBody.appendChild(tr);
-      });
-    }
 
-    // Apply the filter when the button is clicked
-    applyFilter.addEventListener("click", () => {
-      const column = filterColumn.value;
-      const value = filterValue.value.toLowerCase();
-      const columnIndex = tableData[0].indexOf(column);
-
-      if (columnIndex === -1) {
-        alert("Invalid column selected.");
-        return;
+        data.slice(1).forEach(row => {
+          const tr = document.createElement("tr");
+          row.forEach(cell => {
+            const td = document.createElement("td");
+            td.textContent = cell;
+            tr.appendChild(td);
+          });
+          filteredBody.appendChild(tr);
+        });
       }
 
-      // Filter the data
-      const filteredData = tableData.filter((row, index) => {
-        if (index === 0) return true; // Keep the header row
-        return row[columnIndex]?.toString().toLowerCase().includes(value);
+      applyFilter.addEventListener("click", () => {
+        const column = filterColumn.value;
+        const value = filterValue.value.trim().toLowerCase();
+        const columnIndex = tableData[0].indexOf(column);
+
+        if (!value) {
+          alert("Please enter a value to filter.");
+          return;
+        }
+
+        const filteredData = [tableData[0], ...tableData.slice(1).filter(row =>
+          row[columnIndex]?.toString().toLowerCase().includes(value)
+        )];
+
+        displayFilteredTable(filteredData);
       });
 
-      // Display the filtered data
-      displayFilteredTable(filteredData);
-    });
+      backButton.addEventListener("click", () => {
+        window.location.href = "index.html"; // Replace with your main page
+      });
 
-    // Go back to the main page
-    backButton.addEventListener("click", () => {
-      window.location.href = "index.html"; // Replace with the actual main page file name
-    });
-
-    // Initially display the full table
-    displayFilteredTable(tableData);
+      displayFilteredTable(tableData);
+    }
   </script>
 </body>
 </html>
