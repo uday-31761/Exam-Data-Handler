@@ -3,71 +3,129 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Visualize Data</title>
-  <link rel="stylesheet" href="style.css">
+  <title>Data Visualization</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      padding: 0;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .chart-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 30px;
+    }
+    .chart-box {
+      width: 400px;
+      height: 350px;
+      padding: 15px;
+      border: 1px solid #ccc;
+      border-radius: 12px;
+      background-color: #f9f9f9;
+      box-shadow: 2px 2px 12px rgba(0, 0, 0, 0.1);
+    }
+    canvas {
+      width: 100% !important;
+      height: 300px !important;
+    }
+  </style>
 </head>
 <body>
-  <h1>Visualize Data</h1>
-  <select id="columnSelect"></select>
-  <button onclick="generateCharts()">Generate Charts</button>
-  <button onclick="downloadFilteredCSV()">Download Filtered Data</button>
 
-  <div>
-    <canvas id="lineChart"></canvas>
-    <canvas id="pieChart"></canvas>
-  </div>
+<h1>Visualize Data</h1>
+<div class="chart-container" id="charts"></div>
 
-  <script>
-    let filteredData = JSON.parse(localStorage.getItem('filteredData')) || [];
-    let numericColumns = [];
+<script>
+  const tableData = JSON.parse(localStorage.getItem("tableData"));
 
-    window.onload = () => {
-      if (!filteredData.length) {
-        alert('No filtered data found. Please apply filters first.');
-        window.location.href = 'filters.html';
-      }
-      const headers = Object.keys(filteredData[0]);
-      numericColumns = headers.filter(h => filteredData.every(row => typeof row[h] === 'number'));
-      const columnSelect = document.getElementById('columnSelect');
-      numericColumns.forEach(col => {
-        columnSelect.innerHTML += `<option value="${col}">${col}</option>`;
-      });
-    };
+  const excludedColumns = ["Name", "ID", "Obtained Credits", "Attempted Credits"];
+  const gradeValues = ["A+", "A", "B+", "B", "O", "C", "D", "E", "F"];
 
-    function generateCharts() {
-      const selectedColumn = document.getElementById('columnSelect').value;
-      const labels = filteredData.map(row => row.Year);
-      const values = filteredData.map(row => row[selectedColumn]);
+  const headers = tableData[0];
+  const rows = tableData.slice(1);
 
-      if (window.lineChartInstance) window.lineChartInstance.destroy();
-      if (window.pieChartInstance) window.pieChartInstance.destroy();
+  const chartsContainer = document.getElementById("charts");
 
-      const lineCtx = document.getElementById('lineChart').getContext('2d');
-      window.lineChartInstance = new Chart(lineCtx, {
-        type: 'line',
-        data: { labels, datasets: [{ label: selectedColumn, data: values, borderColor: 'blue', fill: false }] }
-      });
+  headers.forEach((header, colIndex) => {
+    if (excludedColumns.includes(header)) return;
 
-      const pieCtx = document.getElementById('pieChart').getContext('2d');
-      window.pieChartInstance = new Chart(pieCtx, {
-        type: 'pie',
-        data: { labels, datasets: [{ data: values, backgroundColor: values.map(() => `hsl(${Math.random() * 360}, 70%, 70%)`) }] }
-      });
+    const columnData = rows.map(row => row[colIndex]);
+
+    // Detect numeric columns
+    if (columnData.every(value => !isNaN(parseFloat(value)) && value !== "")) {
+      const numericData = columnData.map(Number);
+
+      createChart(`${header} - Bar Chart`, header, numericData, "bar");
+      createChart(`${header} - Line Chart`, header, numericData, "line");
     }
-
-    function downloadFilteredCSV() {
-      const csvRows = [Object.keys(filteredData[0]).join(',')];
-      filteredData.forEach(row => {
-        csvRows.push(Object.values(row).join(','));
+    // Detect grade columns
+    else if (gradeValues.some(grade => columnData.includes(grade))) {
+      const gradeCounts = {};
+      gradeValues.forEach(grade => gradeCounts[grade] = 0);
+      columnData.forEach(value => {
+        if (gradeCounts.hasOwnProperty(value)) {
+          gradeCounts[value]++;
+        }
       });
-      const csvData = new Blob([csvRows.join('\n')], { type: 'text/csv' });
-      const url = URL.createObjectURL(csvData);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = 'filtered_data.csv';
-      link.click();
+
+      const labels = Object.keys(gradeCounts);
+      const counts = Object.values(gradeCounts);
+
+      createChart(`${header} - Grade Distribution`, labels, counts, "pie");
+      createChart(`${header} - Grade Count`, labels, counts, "bar");
     }
-  </script>
+  });
+
+  function createChart(title, labels, data, type) {
+    const chartBox = document.createElement("div");
+    chartBox.className = "chart-box";
+
+    const canvas = document.createElement("canvas");
+    chartBox.appendChild(canvas);
+    chartsContainer.appendChild(chartBox);
+
+    new Chart(canvas, {
+      type,
+      data: {
+        labels: Array.isArray(labels) ? labels : rows.map((_, i) => `Row ${i + 1}`),
+        datasets: [{
+          label: title,
+          data,
+          backgroundColor: ['#007bff', '#28a745', '#ffc107', '#dc3545', '#6f42c1'],
+          borderColor: '#333',
+          borderWidth: 1,
+        }],
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          title: {
+            display: true,
+            text: title,
+            font: {
+              size: 16,
+              weight: 'bold'
+            }
+          },
+          legend: {
+            position: type === 'pie' ? 'bottom' : 'top',
+          }
+        },
+        scales: type !== 'pie' ? {
+          y: {
+            beginAtZero: true,
+          }
+        } : {},
+      },
+    });
+  }
+</script>
+
 </body>
 </html>
