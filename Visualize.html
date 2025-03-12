@@ -11,15 +11,31 @@
       margin: 20px;
       padding: 0;
     }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
     h1 {
-      text-align: center;
-      margin-bottom: 30px;
+      margin: 0;
+    }
+    .back-btn {
+      padding: 10px 15px;
+      background-color: #007bff;
+      color: white;
+      text-decoration: none;
+      border-radius: 5px;
+      font-size: 14px;
+    }
+    .back-btn:hover {
+      background-color: #0056b3;
     }
     .chart-container {
       display: flex;
       flex-wrap: wrap;
       justify-content: center;
       gap: 30px;
+      margin-top: 20px;
     }
     .chart-box {
       width: 400px;
@@ -38,11 +54,20 @@
 </head>
 <body>
 
-<h1>Visualize Data</h1>
+<div class="header">
+  <h1>Visualize Data</h1>
+  <a href="data.html" class="back-btn">Back to Home</a>
+</div>
+
 <div class="chart-container" id="charts"></div>
 
 <script>
   const tableData = JSON.parse(localStorage.getItem("tableData"));
+
+  if (!tableData || tableData.length === 0) {
+    alert("No data available. Please upload a file in index.html first.");
+    window.location.href = "index.html";
+  }
 
   const excludedColumns = ["Name", "ID", "Obtained Credits", "Attempted Credits"];
   const gradeValues = ["A+", "A", "B+", "B", "O", "C", "D", "E", "F"];
@@ -57,14 +82,11 @@
 
     const columnData = rows.map(row => row[colIndex]);
 
-    // Detect numeric columns
     if (columnData.every(value => !isNaN(parseFloat(value)) && value !== "")) {
       const numericData = columnData.map(Number);
-
       createChart(`${header} - Bar Chart`, header, numericData, "bar");
       createChart(`${header} - Line Chart`, header, numericData, "line");
-    }
-    // Detect grade columns
+    } 
     else if (gradeValues.some(grade => columnData.includes(grade))) {
       const gradeCounts = {};
       gradeValues.forEach(grade => gradeCounts[grade] = 0);
