@@ -1,0 +1,115 @@
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f5f7fa;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+  }
+  
+  .container {
+    background-color: #fff;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    width: 90%;
+    max-width: 900px;
+  }
+  
+  h1 {
+    text-align: center;
+    color: #333;
+    margin-bottom: 20px;
+  }
+  
+  #initialView, #controls {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-bottom: 20px;
+  }
+  
+  input[type="file"], input[type="text"] {
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    outline: none;
+    width: 100%;
+    max-width: 250px;
+    transition: border-color 0.3s ease;
+  }
+  
+  input[type="file"]:hover, input[type="text"]:hover, input[type="file"]:focus, input[type="text"]:focus {
+    border-color: #007bff;
+  }
+  
+  button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    background-color: #007bff;
+    color: #fff;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+  }
+  
+  button:hover {
+    background-color: #0056b3;
+    transform: translateY(-2px);
+  }
+  
+  button:active {
+    transform: translateY(0);
+  }
+  
+  #dataTable {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+  }
+  
+  #dataTable th, #dataTable td {
+    border: 1px solid #e0e0e0;
+    padding: 12px 15px;
+    text-align: left;
+  }
+  
+  #dataTable th {
+    background-color: #f0f0f0;
+    color: #333;
+  }
+  
+  #dataTable tr:nth-child(even) {
+    background-color: #f9f9f9;
+  }
+  
+  #dataTable tr:hover {
+    background-color: #eaf3ff;
+  }
+  
+  #chartContainer {
+    margin-top: 30px;
+    padding: 15px;
+    background-color: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  }
+  
+  .hidden {
+    display: none;
+  }
+  
+  @media (max-width: 600px) {
+    #initialView, #controls {
+      flex-direction: column;
+      align-items: center;
+    }
+  
+    input[type="file"], input[type="text"] {
+      max-width: 100%;
+    }
+  }
+  
