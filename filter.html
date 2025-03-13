@@ -22,20 +22,41 @@
       margin-bottom: 20px;
       flex-wrap: wrap;
     }
-    select, input {
+    .dropdown, .header-dropdown {
+      position: relative;
+      display: inline-block;
+    }
+    .dropdown-content, .header-dropdown-content {
+      display: none;
+      position: absolute;
+      background-color: #fff;
+      min-width: 200px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      z-index: 1;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    .dropdown:hover .dropdown-content, .header-dropdown:hover .header-dropdown-content {
+      display: block;
+    }
+    .dropdown-content label, .header-dropdown-content label {
+      display: block;
+      margin-bottom: 5px;
+    }
+    input, button, select {
       padding: 8px;
       font-size: 14px;
       border: 1px solid #ccc;
       border-radius: 4px;
     }
     button {
-      padding: 8px 12px;
-      font-size: 14px;
       background-color: #007bff;
       color: white;
-      border: none;
-      border-radius: 4px;
       cursor: pointer;
+      border: none;
     }
     button:hover {
       background-color: #0056b3;
@@ -50,6 +71,7 @@
       padding: 12px;
       border: 1px solid #ddd;
       text-align: left;
+      position: relative;
     }
     th {
       background-color: #007bff;
@@ -58,6 +80,12 @@
     tr:nth-child(even) {
       background-color: #f9f9f9;
     }
+    .header-search {
+      margin-bottom: 10px;
+      padding: 5px;
+      width: 100%;
+      box-sizing: border-box;
+    }
   </style>
 </head>
 <body>
@@ -65,13 +93,14 @@
   <h1>Advanced Data Filter</h1>
 
   <div class="controls">
-    <label>Select Column:</label>
-    <select id="filterColumn"></select>
+    <div class="dropdown">
+      <button>Select Columns</button>
+      <div class="dropdown-content" id="columnDropdown"></div>
+    </div>
 
-    <label>Enter Value:</label>
     <input type="text" id="filterValue" placeholder="Enter filter value">
-
-    <button id="filterByColumn">Filter by Column</button>
+    
+    <button id="applyColumnSelection">Show Selected Columns</button>
     <button id="filterByValue">Filter by Value</button>
     <button id="filterByBoth">Filter by Column & Value</button>
     <button id="resetTable">Reset</button>
@@ -87,93 +116,103 @@
 
   <script>
     const tableData = JSON.parse(localStorage.getItem("tableData")) || [];
-    const filterColumn = document.getElementById("filterColumn");
+    const columnDropdown = document.getElementById("columnDropdown");
     const filterValue = document.getElementById("filterValue");
-    const filterByColumn = document.getElementById("filterByColumn");
-    const filterByValue = document.getElementById("filterByValue");
-    const filterByBoth = document.getElementById("filterByBoth");
-    const resetTable = document.getElementById("resetTable");
-    const backButton = document.getElementById("backButton");
     const filteredHeader = document.getElementById("filteredHeader");
     const filteredBody = document.getElementById("filteredBody");
+
+    const applyColumnSelection = document.getElementById("applyColumnSelection");
+    const resetTable = document.getElementById("resetTable");
+    const backButton = document.getElementById("backButton");
+
+    let selectedColumns = [];
 
     if (tableData.length === 0) {
       alert("No data found to display!");
     } else {
       tableData[0].forEach(header => {
-        const option = document.createElement("option");
-        option.value = header;
-        option.textContent = header;
-        filterColumn.appendChild(option);
+        const label = document.createElement("label");
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.value = header;
+        label.appendChild(checkbox);
+        label.appendChild(document.createTextNode(header));
+        columnDropdown.appendChild(label);
       });
 
-      function displayTable(data, columns = null) {
+      function displayTable(data, columns) {
         filteredHeader.innerHTML = "";
         filteredBody.innerHTML = "";
 
-        const headers = columns || tableData[0];
-
-        headers.forEach(header => {
+        columns.forEach(header => {
           const th = document.createElement("th");
-          th.textContent = header;
+          th.innerHTML = `
+            <div class="header-dropdown">
+              ${header}
+              <div class="header-dropdown-content">
+                <input type='text' class='header-search' placeholder='Search ${header}' onkeyup="filterHeaderValues(this, '${header}')">
+                ${[...new Set(data.slice(1).map(row => row[tableData[0].indexOf(header)]))]
+                  .map(value => `<label><input type='checkbox' value='${value}'>${value}</label>`)
+                  .join('')}
+                <button onclick="applyHeaderFilter('${header}')">Filter</button>
+              </div>
+            </div>`;
           filteredHeader.appendChild(th);
         });
 
         data.slice(1).forEach(row => {
           const tr = document.createElement("tr");
-          headers.forEach(header => {
+          columns.forEach(header => {
             const index = tableData[0].indexOf(header);
             const td = document.createElement("td");
-            td.textContent = row[index];
+            td.textContent = row[index] || "";
             tr.appendChild(td);
           });
           filteredBody.appendChild(tr);
         });
       }
 
-      filterByColumn.addEventListener("click", () => {
-        const selectedColumn = filterColumn.value;
-        displayTable(tableData, ["University Id", "Student Name", selectedColumn]);
-      });
+      window.applyHeaderFilter = (header) => {
+        const selectedValues = Array.from(document.querySelectorAll(`th .header-dropdown-content input:checked`))
+          .map(cb => cb.value);
 
-      filterByValue.addEventListener("click", () => {
-        const value = filterValue.value.trim().toLowerCase();
-        if (!value) {
-          alert("Please enter a value to filter.");
+        const index = tableData[0].indexOf(header);
+        const filteredData = [
+          tableData[0],
+          ...tableData.slice(1).filter(row => selectedValues.includes(row[index]))
+        ];
+        displayTable(filteredData, selectedColumns.length ? selectedColumns : tableData[0]);
+      };
+
+      window.filterHeaderValues = (input, header) => {
+        const filter = input.value.toLowerCase();
+        const checkboxes = input.parentNode.querySelectorAll("label");
+        checkboxes.forEach(label => {
+          const text = label.textContent.toLowerCase();
+          label.style.display = text.includes(filter) ? "block" : "none";
+        });
+      };
+
+      applyColumnSelection.addEventListener("click", () => {
+        selectedColumns = Array.from(columnDropdown.querySelectorAll("input:checked")).map(cb => cb.value);
+        if (selectedColumns.length === 0) {
+          alert("Select at least one column to display.");
           return;
         }
-        const filteredData = [tableData[0], ...tableData.slice(1).filter(row =>
-          row.some(cell => cell?.toString().toLowerCase().includes(value))
-        )];
-        displayTable(filteredData);
-      });
-
-      filterByBoth.addEventListener("click", () => {
-        const column = filterColumn.value;
-        const value = filterValue.value.trim().toLowerCase();
-        const columnIndex = tableData[0].indexOf(column);
-
-        if (!value) {
-          alert("Please enter a value to filter.");
-          return;
-        }
-
-        const filteredData = [tableData[0], ...tableData.slice(1).filter(row =>
-          row[columnIndex]?.toString().toLowerCase().includes(value)
-        )];
-
-        displayTable(filteredData, ["University Id", "Student Name", column]);
+        displayTable(tableData, selectedColumns);
       });
 
       resetTable.addEventListener("click", () => {
-        displayTable(tableData);
+        selectedColumns = [];
+        columnDropdown.querySelectorAll("input").forEach(cb => cb.checked = false);
+        displayTable(tableData, tableData[0]);
       });
 
       backButton.addEventListener("click", () => {
         window.location.href = "data.html";
       });
 
-      displayTable(tableData);
+      displayTable(tableData, tableData[0]);
     }
   </script>
 

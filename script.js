@@ -1,4 +1,3 @@
-/* script.js */
 let tableData = [];
 
 document.getElementById("showDataBtn").addEventListener("click", () => {

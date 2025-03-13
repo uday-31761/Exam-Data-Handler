@@ -18,21 +18,7 @@
     <div id="controls" class="hidden">
       <input type="text" id="searchInput" placeholder="Search..." />
       <button id="filterButton">Go to Filter Page</button>
-
-<script>
-  document.getElementById("filterButton").addEventListener("click", () => {
-    window.location.href = "filter.html";
-  });
-</script>
-
       <button id="visualizeButton">Visualize Data</button>
-
-<script>
-  document.getElementById("visualizeButton").addEventListener("click", () => {
-    localStorage.setItem("tableData", JSON.stringify(tableData));
-    window.location.href = "visualize.html";
-  });
-</script>
     </div>
     <table id="dataTable">
       <thead>
@@ -40,10 +26,65 @@
       </thead>
       <tbody id="tableBody"></tbody>
     </table>
-    <div id="chartContainer">
-      <canvas id="chart"></canvas>
-    </div>
   </div>
-  <script src="script.js"></script>
+  <script>
+    let tableData = [];
+
+    document.getElementById("showDataBtn").addEventListener("click", () => {
+      const fileInput = document.getElementById("fileInput");
+      const file = fileInput.files[0];
+
+      if (!file) {
+        alert("Please select a file first.");
+        return;
+      }
+
+      const reader = new FileReader();
+
+      reader.onload = (e) => {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: "array" });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        tableData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+        localStorage.setItem("tableData", JSON.stringify(tableData));
+        displayTable(tableData);
+        document.getElementById("controls").classList.remove("hidden");
+      };
+
+      reader.readAsArrayBuffer(file);
+    });
+
+    function displayTable(data) {
+      const headerRow = document.getElementById("tableHeader");
+      const tableBody = document.getElementById("tableBody");
+      headerRow.innerHTML = "";
+      tableBody.innerHTML = "";
+
+      data[0].forEach(header => {
+        const th = document.createElement("th");
+        th.textContent = header;
+        headerRow.appendChild(th);
+      });
+
+      data.slice(1).forEach(row => {
+        const tr = document.createElement("tr");
+        row.forEach(cell => {
+          const td = document.createElement("td");
+          td.textContent = cell;
+          tr.appendChild(td);
+        });
+        tableBody.appendChild(tr);
+      });
+    }
+
+    document.getElementById("filterButton").addEventListener("click", () => {
+      window.location.href = "filter.html";
+    });
+
+    document.getElementById("visualizeButton").addEventListener("click", () => {
+      window.location.href = "visualize.html";
+    });
+  </script>
 </body>
 </html>
