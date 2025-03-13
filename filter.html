@@ -7,8 +7,8 @@
   <style>
     body {
       font-family: Arial, sans-serif;
-      margin: 20px;
-      background-color: #f5f5f5;
+      background-color: #f4f4f4;
+      padding: 20px;
     }
     h1 {
       text-align: center;
@@ -65,9 +65,15 @@
   <h1>Filter Data</h1>
 
   <div class="controls">
+    <label>Select Column:</label>
     <select id="filterColumn"></select>
+    
+    <label>Enter Value:</label>
     <input type="text" id="filterValue" placeholder="Enter filter value">
-    <button id="applyFilter">Apply Filter</button>
+    
+    <button id="applyFilter">Filter by Value</button>
+    <button id="applyColumnFilter">Filter by Column</button>
+    <button id="resetTable">Reset</button>
     <button id="backButton">Back to Main Page</button>
   </div>
 
@@ -84,6 +90,8 @@
     const filterColumn = document.getElementById("filterColumn");
     const filterValue = document.getElementById("filterValue");
     const applyFilter = document.getElementById("applyFilter");
+    const applyColumnFilter = document.getElementById("applyColumnFilter");
+    const resetTable = document.getElementById("resetTable");
     const backButton = document.getElementById("backButton");
     const filteredHeader = document.getElementById("filteredHeader");
     const filteredBody = document.getElementById("filteredBody");
@@ -91,6 +99,7 @@
     if (tableData.length === 0) {
       alert("No data found to display!");
     } else {
+      // Populate the column selector
       tableData[0].forEach(header => {
         const option = document.createElement("option");
         option.value = header;
@@ -98,11 +107,18 @@
         filterColumn.appendChild(option);
       });
 
-      function displayFilteredTable(data) {
+      function displayTable(data, selectedColumn = null) {
         filteredHeader.innerHTML = "";
         filteredBody.innerHTML = "";
 
-        data[0].forEach(header => {
+        let headers = ["University Id", "Student Name"];
+        if (selectedColumn && selectedColumn !== "University Id" && selectedColumn !== "Student Name") {
+          headers.push(selectedColumn);
+        } else {
+          headers = tableData[0]; // Show full table if no column is selected
+        }
+
+        headers.forEach(header => {
           const th = document.createElement("th");
           th.textContent = header;
           filteredHeader.appendChild(th);
@@ -110,15 +126,19 @@
 
         data.slice(1).forEach(row => {
           const tr = document.createElement("tr");
-          row.forEach(cell => {
-            const td = document.createElement("td");
-            td.textContent = cell;
-            tr.appendChild(td);
+          headers.forEach(header => {
+            const index = tableData[0].indexOf(header);
+            if (index !== -1) {
+              const td = document.createElement("td");
+              td.textContent = row[index];
+              tr.appendChild(td);
+            }
           });
           filteredBody.appendChild(tr);
         });
       }
 
+      // Filter by value
       applyFilter.addEventListener("click", () => {
         const column = filterColumn.value;
         const value = filterValue.value.trim().toLowerCase();
@@ -133,19 +153,28 @@
           row[columnIndex]?.toString().toLowerCase().includes(value)
         )];
 
-        displayFilteredTable(filteredData);
+        displayTable(filteredData);
       });
 
+      // Filter by column (Show only University ID, Student Name, and selected column)
+      applyColumnFilter.addEventListener("click", () => {
+        const selectedColumn = filterColumn.value;
+        displayTable(tableData, selectedColumn);
+      });
+
+      // Reset table
+      resetTable.addEventListener("click", () => {
+        displayTable(tableData);
+      });
+
+      // Back button functionality
       backButton.addEventListener("click", () => {
-  window.location.href = "data.html"; // Now goes back to the new data page
-});
+        window.location.href = "data.html";
+      });
 
-
-      displayFilteredTable(tableData);
+      // Show full table initially
+      displayTable(tableData);
     }
   </script>
 </body>
 </html>
-
-
-
